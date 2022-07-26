@@ -1,4 +1,4 @@
-from typing import Any, Optional, Protocol, TypeVar
+from typing import Any, List, Optional, Protocol, TypeVar
 
 from pydantic import BaseModel, ConstrainedInt
 
@@ -17,7 +17,7 @@ class PaginatedMethodProtocol(Protocol[_Item]):
         offset: Optional[int] = None,
         size: Optional[int] = None,
         **kwargs: Any,
-    ) -> list[_Item]:
+    ) -> List[_Item]:
         ...
 
 

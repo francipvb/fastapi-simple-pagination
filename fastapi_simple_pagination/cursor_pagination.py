@@ -1,6 +1,6 @@
 from asyncio import create_task
 from dataclasses import dataclass
-from typing import Callable, Generic
+from typing import Any, Callable, Generic, List, Optional
 
 from fastapi import Query, Request
 from pydantic import (
@@ -30,13 +30,13 @@ class CursorPage(GenericModel, Generic[_Item]):
     current: AnyHttpUrl = Field(
         description="The URL of the current page.",
     )
-    next_url: AnyHttpUrl | None = Field(
+    next_url: Optional[AnyHttpUrl  ]= Field(
         description="The next page URL.",
     )
-    previous_url: AnyHttpUrl | None = Field(
+    previous_url: Optional[AnyHttpUrl  ]= Field(
         description="The previous page URL.",
     )
-    items: list[_Item] = Field(description="The items of the page.")
+    items: List[_Item] = Field(description="The items of the page.")
 
 
 @dataclass()
@@ -55,9 +55,9 @@ class CursorPaginationParams:
         self,
         items_getter: PaginatedMethodProtocol[_Item],
         item_counter: CountItems,
-        item_mapper: Callable[[_Item], _Item] | None = None,
-        *args,
-        **kwargs,
+        item_mapper: Optional[Callable[[_Item], _Item]]  = None,
+        *args: Any,
+        **kwargs: Any,
     ) -> CursorPage[_Item]:
         item_list = create_task(
             items_getter(*args, size=self.size, offset=self.offset, **kwargs)
@@ -74,7 +74,7 @@ class CursorPaginationParams:
         return self._build_page(await item_count, items, len(await has_next) > 0)
 
     def _build_page(
-        self, item_count: int, item_list: list[_Item], has_next: bool
+        self, item_count: int, item_list: List[_Item], has_next: bool
     ) -> CursorPage[_Item]:
         return CursorPage(
             items=item_list,
@@ -86,7 +86,7 @@ class CursorPaginationParams:
             offset=self.offset,
         )
 
-    def _build_next_url(self, items: list[_Item]):
+    def _build_next_url(self, items: List[_Item]):
         new_url = self.request.url.replace_query_params(
             offset=self.offset + len(items),
             size=self.size,
