@@ -1,12 +1,11 @@
-from asyncio import Task, create_task
+from asyncio import create_task
 from dataclasses import dataclass
-from typing import Any, Awaitable, Callable, Generic, List, Optional, Type
+from typing import Any, Callable, List, Optional
 
 from fastapi import Query, Request
-from pydantic import AnyHttpUrl, Field, NonNegativeInt, PositiveInt, parse_obj_as
-from pydantic.generics import GenericModel
+from pydantic import AnyHttpUrl, NonNegativeInt, parse_obj_as
 
-from .common import CountItems, PaginatedMethodProtocol, QuerySize, _Item, _OtherItem
+from .common import CountItems, PaginatedMethodProtocol, QuerySize, _Item
 from .schemas import CursorPage
 
 
@@ -26,7 +25,7 @@ class CursorPaginationParams:
         self,
         items_getter: PaginatedMethodProtocol[_Item],
         item_counter: CountItems,
-        item_mapper: Optional[Callable[[_Item], _Item]]  = None,
+        item_mapper: Optional[Callable[[_Item], _Item]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> CursorPage[_Item]:

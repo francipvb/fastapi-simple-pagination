@@ -5,8 +5,8 @@ import typing
 import fastapi
 from pydantic import AnyHttpUrl, parse_obj_as
 
-from .schemas import Page
 from .common import _Item
+from .schemas import Page
 
 
 @dataclasses.dataclass(frozen=True)
