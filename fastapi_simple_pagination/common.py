@@ -3,7 +3,7 @@ from typing import Any, List, Optional, Protocol, TypeVar
 from pydantic import BaseModel, ConstrainedInt
 
 _Item = TypeVar("_Item", bound=BaseModel)
-
+_OtherItem = TypeVar('_OtherItem', bound=BaseModel)
 
 class QuerySize(ConstrainedInt):
     le = 100

@@ -1,42 +1,13 @@
-from asyncio import create_task
+from asyncio import Task, create_task
 from dataclasses import dataclass
-from typing import Any, Callable, Generic, List, Optional
+from typing import Any, Awaitable, Callable, Generic, List, Optional, Type
 
 from fastapi import Query, Request
-from pydantic import (
-    AnyHttpUrl,
-    Field,
-    NonNegativeInt,
-    PositiveInt,
-    parse_obj_as,
-)
+from pydantic import AnyHttpUrl, Field, NonNegativeInt, PositiveInt, parse_obj_as
 from pydantic.generics import GenericModel
 
-from .common import CountItems, PaginatedMethodProtocol, QuerySize, _Item
-
-
-class CursorPage(GenericModel, Generic[_Item]):
-    """An offset and size paginated list."""
-
-    offset: NonNegativeInt = Field(
-        description="The offset where to start retrieving.",
-    )
-    size: PositiveInt = Field(
-        description="The size of the page.",
-    )
-    count: NonNegativeInt = Field(
-        description="How many items are saved in the store.",
-    )
-    current: AnyHttpUrl = Field(
-        description="The URL of the current page.",
-    )
-    next_url: Optional[AnyHttpUrl  ]= Field(
-        description="The next page URL.",
-    )
-    previous_url: Optional[AnyHttpUrl  ]= Field(
-        description="The previous page URL.",
-    )
-    items: List[_Item] = Field(description="The items of the page.")
+from .common import CountItems, PaginatedMethodProtocol, QuerySize, _Item, _OtherItem
+from .schemas import CursorPage
 
 
 @dataclass()
