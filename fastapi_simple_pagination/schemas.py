@@ -108,7 +108,7 @@ class CursorPage(GenericModel, Generic[_Item]):
     ) -> "CursorPage[_OtherItem]":
         new_page = CursorPage(  # type: ignore
             items=items,
-            **dict(self),
+            **self.dict(exclude=["items"]),
         )
 
         if type_ is not None:
