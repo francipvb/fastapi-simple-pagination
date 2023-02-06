@@ -1,12 +1,16 @@
 from asyncio import create_task
 from dataclasses import dataclass
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List
 
 from fastapi import Query, Request
 from pydantic import AnyHttpUrl, NonNegativeInt, parse_obj_as
 
-from .common import CountItems, PaginatedMethodProtocol, QuerySize, _Item
+from .common import CountItems, PaginatedMethodProtocol, QuerySize, _Item, _OtherItem
 from .schemas import CursorPage
+
+
+def _identity(item: _Item) -> _Item:
+    return item
 
 
 @dataclass()
@@ -25,21 +29,17 @@ class CursorPaginationParams:
         self,
         items_getter: PaginatedMethodProtocol[_Item],
         item_counter: CountItems,
-        item_mapper: Optional[Callable[[_Item], _Item]] = None,
-        *args: Any,
+        item_mapper: Callable[[_Item], _OtherItem] = _identity,
         **kwargs: Any,
-    ) -> CursorPage[_Item]:
+    ) -> CursorPage[_OtherItem]:
         item_list = create_task(
-            items_getter(*args, size=self.size, offset=self.offset, **kwargs)
+            items_getter(size=self.size, offset=self.offset, **kwargs)
         )
-        item_count = create_task(item_counter(*args, **kwargs))
+        item_count = create_task(item_counter(**kwargs))
         has_next = create_task(
-            items_getter(*args, offset=self.offset + self.size, size=1, **kwargs)
+            items_getter(offset=self.offset + self.size, size=1, **kwargs)
         )
-        if item_mapper is not None:
-            items = [item_mapper(i) for i in await item_list]
-        else:
-            items = await item_list
+        items = [item_mapper(i) for i in await item_list]
 
         return self._build_page(await item_count, items, len(await has_next) > 0)
 
