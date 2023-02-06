@@ -14,7 +14,7 @@ class QuerySize(ConstrainedInt):
 class PaginatedMethodProtocol(Protocol[_Item]):
     async def __call__(
         self,
-        *args: Any,
+        *,
         offset: Optional[int] = None,
         size: Optional[int] = None,
         **kwargs: Any,
@@ -23,5 +23,5 @@ class PaginatedMethodProtocol(Protocol[_Item]):
 
 
 class CountItems(Protocol):
-    async def __call__(self, *args: Any, **kwargs: Any) -> int:
+    async def __call__(self, **kwargs: Any) -> int:
         ...
