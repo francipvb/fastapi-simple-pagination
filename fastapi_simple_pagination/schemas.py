@@ -1,13 +1,22 @@
-from asyncio import Task, create_task
-from typing import Awaitable, Callable, Generic, List, Optional, Type
+from __future__ import annotations
 
-from pydantic import AnyHttpUrl, Field, NonNegativeInt, PositiveInt
+from asyncio import Task, create_task, ensure_future
+from typing import Any, Awaitable, Callable, Generic, List, Optional, Type, TypeVar
+
+from pydantic import (
+    AnyHttpUrl,
+    Field,
+    HttpUrl,
+    NonNegativeInt,
+    PositiveInt,
+    parse_obj_as,
+)
 from pydantic.generics import GenericModel
 
-from .common import _Item, _OtherItem
+from .common import Item, OtherItem
 
 
-class Page(GenericModel, Generic[_Item]):
+class Page(GenericModel, Generic[Item]):
     count: int = Field(
         default=...,
         description="The total number of items in the database.",
@@ -37,22 +46,22 @@ class Page(GenericModel, Generic[_Item]):
         default=...,
         description="The current page number.",
     )
-    items: List[_Item] = Field(
+    items: List[Item] = Field(
         default=...,
         description="The item list on this page.",
     )
 
     def map(
         self,
-        mapper: Callable[[_Item], _OtherItem],
-        type_: Optional[Type[_OtherItem]] = None,
-    ) -> "Page[_OtherItem]":
+        mapper: Callable[[Item], OtherItem],
+        type_: Optional[Type[OtherItem]] = None,
+    ) -> "Page[OtherItem]":
         items = [mapper(item) for item in self.items]
         return self._build_new_page(items, type_)
 
     def _build_new_page(
-        self, items: List[_OtherItem], type_: Optional[Type[_OtherItem]] = None
-    ) -> "Page[_OtherItem]":
+        self, items: List[OtherItem], type_: Optional[Type[OtherItem]] = None
+    ) -> "Page[OtherItem]":
         new_page = Page(  # type: ignore
             items=items,
             **dict(self),
@@ -63,16 +72,19 @@ class Page(GenericModel, Generic[_Item]):
 
     async def map_async(
         self,
-        mapper: Callable[[_Item], Awaitable[_OtherItem]],
-        type_: Optional[Type[_OtherItem]] = None,
-    ) -> "Page[_OtherItem]":
-        item_tasks: List[Task[_OtherItem]] = [
+        mapper: Callable[[Item], Awaitable[OtherItem]],
+        type_: Optional[Type[OtherItem]] = None,
+    ) -> "Page[OtherItem]":
+        item_tasks: List[Task[OtherItem]] = [
             create_task(mapper(item)) for item in self.items  # type: ignore
         ]
         return self._build_new_page([await task for task in item_tasks], type_)
 
+    def validate_page(self, page_model: Type[_Page]) -> _Page:
+        return parse_obj_as(page_model, self)
 
-class CursorPage(GenericModel, Generic[_Item]):
+
+class CursorPage(GenericModel, Generic[Item]):
     """An offset and size paginated list."""
 
     offset: NonNegativeInt = Field(
@@ -84,44 +96,40 @@ class CursorPage(GenericModel, Generic[_Item]):
     count: NonNegativeInt = Field(
         description="How many items are saved in the store.",
     )
-    current: AnyHttpUrl = Field(
+    current: HttpUrl = Field(
         description="The URL of the current page.",
     )
-    next_url: Optional[AnyHttpUrl] = Field(
+    next_url: Optional[HttpUrl] = Field(
         description="The next page URL.",
     )
-    previous_url: Optional[AnyHttpUrl] = Field(
+    previous_url: Optional[HttpUrl] = Field(
         description="The previous page URL.",
     )
-    items: List[_Item] = Field(description="The items of the page.")
+    items: List[Item] = Field(description="The items of the page.")
 
-    def map(
-        self,
-        mapper: Callable[[_Item], _OtherItem],
-        type_: Optional[Type[_OtherItem]] = None,
-    ) -> "CursorPage[_OtherItem]":
+    def map(self, mapper: Callable[[Item], OtherItem]) -> "CursorPage[OtherItem]":
         items = [mapper(item) for item in self.items]
-        return self._build_new_page(items, type_)
+        return self._build_new_page(items)
 
-    def _build_new_page(
-        self, items: List[_OtherItem], type_: Optional[Type[_OtherItem]] = None
-    ) -> "CursorPage[_OtherItem]":
+    def _build_new_page(self, items: List[OtherItem]) -> "CursorPage[OtherItem]":
         new_page = CursorPage(  # type: ignore
             items=items,
             **self.dict(exclude={"items"}),
         )
 
-        if type_ is not None:
-            return Page[type_].parse_obj(new_page)  # type: ignore
-
         return new_page
 
     async def map_async(
-        self,
-        mapper: Callable[[_Item], Awaitable[_OtherItem]],
-        type_: Optional[Type[_OtherItem]] = None,
-    ) -> "CursorPage[_OtherItem]":
-        item_tasks: List[Task[_OtherItem]] = [
-            create_task(mapper(item)) for item in self.items  # type: ignore
+        self, mapper: Callable[[Item], Awaitable[OtherItem]]
+    ) -> "CursorPage[OtherItem]":
+        item_tasks: List[Task[OtherItem]] = [
+            ensure_future(mapper(item)) for item in self.items
         ]
-        return self._build_new_page([await task for task in item_tasks], type_)
+        return self._build_new_page([await task for task in item_tasks])
+
+    def validate_page(self, page_model: Type[_CursorPage]) -> _CursorPage:
+        return parse_obj_as(page_model, self)
+
+
+_CursorPage = TypeVar("_CursorPage", bound=CursorPage[Any])
+_Page = TypeVar("_Page", bound=CursorPage[Any])

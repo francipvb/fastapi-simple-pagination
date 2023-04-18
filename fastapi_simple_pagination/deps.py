@@ -5,12 +5,12 @@ import typing
 import fastapi
 from pydantic import AnyHttpUrl, parse_obj_as
 
-from .common import _Item
+from .common import Item
 from .schemas import Page
 
 
 @dataclasses.dataclass(frozen=True)
-class PaginationRequestParams(typing.Generic[_Item]):
+class PaginationRequestParams(typing.Generic[Item]):
     request: fastapi.Request
     page: int = fastapi.Query(1, description="The page number to query.")
     size: int = fastapi.Query(10, description="The page size.")
@@ -50,8 +50,8 @@ class PaginationRequestParams(typing.Generic[_Item]):
         return parse_obj_as(AnyHttpUrl, raw_url)
 
     def paginated(
-        self, items: typing.List[_Item], total_count: typing.Optional[int] = None
-    ) -> Page[_Item]:
+        self, items: typing.List[Item], total_count: typing.Optional[int] = None
+    ) -> Page[Item]:
         count = total_count or len(items)
         return Page(
             count=count,
