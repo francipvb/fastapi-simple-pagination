@@ -57,7 +57,9 @@ class CursorPaginationParams:
         )
 
     def _build_next_url(self, items: List[_Item]):
-        new_url = self.request.url.replace_query_params(
+        new_url = self.request.url.remove_query_params(
+            ["offset", "size"]
+        ).include_query_params(
             offset=self.offset + len(items),
             size=self.size,
         )
@@ -68,5 +70,7 @@ class CursorPaginationParams:
         offset = self.offset - self.size
         if offset < 0:
             offset = 0
-        new_url = self.request.url.replace_query_params(offset=offset, size=self.size)
+        new_url = self.request.url.remove_query_params(
+            ["offset", "size"]
+        ).include_query_params(offset=offset, size=self.size)
         return parse_obj_as(AnyHttpUrl, str(new_url))
