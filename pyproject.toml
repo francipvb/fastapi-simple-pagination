@@ -3,7 +3,7 @@ authors = ["Francisco Del Roio <francipvb@hotmail.com>"]
 description = "Simple and generic pagination dependencies for FastAPI."
 exclude = ["tests/"]
 name = "fastapi-simple-pagination"
-version = "1.2.2"
+version = "1.2.4"
 
 [tool.poetry.dependencies]
 fastapi = "<1.0.0"
