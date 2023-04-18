@@ -80,6 +80,9 @@ class Page(GenericModel, Generic[Item]):
         ]
         return self._build_new_page([await task for task in item_tasks], type_)
 
+    def validate_page(self, page_model: Type[_Page]) -> _Page:
+        return parse_obj_as(page_model, self)
+
 
 class CursorPage(GenericModel, Generic[Item]):
     """An offset and size paginated list."""
@@ -124,8 +127,9 @@ class CursorPage(GenericModel, Generic[Item]):
         ]
         return self._build_new_page([await task for task in item_tasks])
 
-    def validate_page(self, page_model: Type[_Page]) -> _Page:
+    def validate_page(self, page_model: Type[_CursorPage]) -> _CursorPage:
         return parse_obj_as(page_model, self)
 
 
+_CursorPage = TypeVar("_CursorPage", bound=CursorPage[Any])
 _Page = TypeVar("_Page", bound=CursorPage[Any])
