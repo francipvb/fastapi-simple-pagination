@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, List
 
 from fastapi import Query, Request
-from pydantic import HttpUrl, NonNegativeInt, parse_obj_as
+from pydantic import AnyHttpUrl, NonNegativeInt, parse_obj_as
 
 from .common import CountItems, Item, OtherItem, PaginatedMethodProtocol, QuerySize
 from .schemas import CursorPage
@@ -44,14 +44,14 @@ class CursorPaginationParams:
         return CursorPage(
             items=item_list,
             count=item_count,
-            current=parse_obj_as(HttpUrl, str(self.request.url)),
+            current=parse_obj_as(AnyHttpUrl, str(self.request.url)),
             next_url=self._build_next_url() if has_next else None,
             previous_url=self._build_previous_url() if self.offset > 0 else None,
             size=self.size,
             offset=self.offset,
         )
 
-    def _build_next_url(self) -> HttpUrl:
+    def _build_next_url(self) -> AnyHttpUrl:
         new_url = self.request.url.remove_query_params(
             ["offset", "size"]
         ).include_query_params(
@@ -59,13 +59,13 @@ class CursorPaginationParams:
             size=self.size,
         )
 
-        return parse_obj_as(HttpUrl, str(new_url))
+        return parse_obj_as(AnyHttpUrl, str(new_url))
 
-    def _build_previous_url(self) -> HttpUrl:
+    def _build_previous_url(self) -> AnyHttpUrl:
         offset = self.offset - self.size
         if offset < 0:
             offset = 0
         new_url = self.request.url.remove_query_params(
             ["offset", "size"]
         ).include_query_params(offset=offset, size=self.size)
-        return parse_obj_as(HttpUrl, str(new_url))
+        return parse_obj_as(AnyHttpUrl, str(new_url))
