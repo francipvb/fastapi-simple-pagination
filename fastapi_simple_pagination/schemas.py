@@ -3,14 +3,7 @@ from __future__ import annotations
 from asyncio import Task, create_task, ensure_future
 from typing import Any, Awaitable, Callable, Generic, List, Optional, Type, TypeVar
 
-from pydantic import (
-    AnyHttpUrl,
-    Field,
-    HttpUrl,
-    NonNegativeInt,
-    PositiveInt,
-    parse_obj_as,
-)
+from pydantic import AnyHttpUrl, Field, NonNegativeInt, PositiveInt, parse_obj_as
 from pydantic.generics import GenericModel
 
 from .common import Item, OtherItem
@@ -96,13 +89,13 @@ class CursorPage(GenericModel, Generic[Item]):
     count: NonNegativeInt = Field(
         description="How many items are saved in the store.",
     )
-    current: HttpUrl = Field(
+    current: AnyHttpUrl = Field(
         description="The URL of the current page.",
     )
-    next_url: Optional[HttpUrl] = Field(
+    next_url: Optional[AnyHttpUrl] = Field(
         description="The next page URL.",
     )
-    previous_url: Optional[HttpUrl] = Field(
+    previous_url: Optional[AnyHttpUrl] = Field(
         description="The previous page URL.",
     )
     items: List[Item] = Field(description="The items of the page.")
