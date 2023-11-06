@@ -3,13 +3,27 @@ from __future__ import annotations
 from asyncio import Task, create_task, ensure_future
 from typing import Any, Awaitable, Callable, Generic, List, Optional, Type, TypeVar
 
-from pydantic import AnyHttpUrl, Field, NonNegativeInt, PositiveInt, parse_obj_as
-from pydantic.generics import GenericModel
+import pydantic
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    Field,
+    NonNegativeInt,
+    PositiveInt,
+    parse_obj_as,
+)
 
-from .common import Item, OtherItem
+if pydantic.__version__.startswith("1.10"):
+    from pydantic.generics import GenericModel
+else:
+    GenericModel = BaseModel  # type: ignore
 
 
-class Page(GenericModel, Generic[Item]):
+_T = TypeVar("_T", bound=BaseModel)
+_TM = TypeVar("_TM", bound=BaseModel)
+
+
+class Page(GenericModel, Generic[_T]):
     count: int = Field(
         default=...,
         description="The total number of items in the database.",
@@ -39,22 +53,22 @@ class Page(GenericModel, Generic[Item]):
         default=...,
         description="The current page number.",
     )
-    items: List[Item] = Field(
+    items: List[_T] = Field(
         default=...,
         description="The item list on this page.",
     )
 
     def map(
         self,
-        mapper: Callable[[Item], OtherItem],
-        type_: Optional[Type[OtherItem]] = None,
-    ) -> "Page[OtherItem]":
+        mapper: Callable[[_T], _TM],
+        type_: Optional[Type[_TM]] = None,
+    ) -> Page[_TM]:
         items = [mapper(item) for item in self.items]
         return self._build_new_page(items, type_)
 
     def _build_new_page(
-        self, items: List[OtherItem], type_: Optional[Type[OtherItem]] = None
-    ) -> "Page[OtherItem]":
+        self, items: List[_TM], type_: Optional[Type[_TM]] = None
+    ) -> Page[_TM]:
         new_page = Page(  # type: ignore
             items=items,
             **dict(self),
@@ -65,10 +79,10 @@ class Page(GenericModel, Generic[Item]):
 
     async def map_async(
         self,
-        mapper: Callable[[Item], Awaitable[OtherItem]],
-        type_: Optional[Type[OtherItem]] = None,
-    ) -> "Page[OtherItem]":
-        item_tasks: List[Task[OtherItem]] = [
+        mapper: Callable[[_T], Awaitable[_TM]],
+        type_: Optional[Type[_TM]] = None,
+    ) -> Page[_TM]:
+        item_tasks: List[Task[_TM]] = [
             create_task(mapper(item)) for item in self.items  # type: ignore
         ]
         return self._build_new_page([await task for task in item_tasks], type_)
@@ -77,7 +91,7 @@ class Page(GenericModel, Generic[Item]):
         return parse_obj_as(page_model, self)
 
 
-class CursorPage(GenericModel, Generic[Item]):
+class CursorPage(GenericModel, Generic[_T]):
     """An offset and size paginated list."""
 
     offset: NonNegativeInt = Field(
@@ -98,13 +112,13 @@ class CursorPage(GenericModel, Generic[Item]):
     previous_url: Optional[AnyHttpUrl] = Field(
         description="The previous page URL.",
     )
-    items: List[Item] = Field(description="The items of the page.")
+    items: List[_T] = Field(description="The items of the page.")
 
-    def map(self, mapper: Callable[[Item], OtherItem]) -> "CursorPage[OtherItem]":
+    def map(self, mapper: Callable[[_T], _TM]) -> CursorPage[_TM]:
         items = [mapper(item) for item in self.items]
         return self._build_new_page(items)
 
-    def _build_new_page(self, items: List[OtherItem]) -> "CursorPage[OtherItem]":
+    def _build_new_page(self, items: List[_TM]) -> CursorPage[_TM]:
         new_page = CursorPage(  # type: ignore
             items=items,
             **self.dict(exclude={"items"}),
@@ -113,9 +127,9 @@ class CursorPage(GenericModel, Generic[Item]):
         return new_page
 
     async def map_async(
-        self, mapper: Callable[[Item], Awaitable[OtherItem]]
-    ) -> "CursorPage[OtherItem]":
-        item_tasks: List[Task[OtherItem]] = [
+        self, mapper: Callable[[_T], Awaitable[_TM]]
+    ) -> CursorPage[_TM]:
+        item_tasks: List[Task[_TM]] = [
             ensure_future(mapper(item)) for item in self.items
         ]
         return self._build_new_page([await task for task in item_tasks])
