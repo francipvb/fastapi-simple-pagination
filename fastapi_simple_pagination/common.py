@@ -1,14 +1,12 @@
-from typing import Any, List, Optional, Protocol, TypeVar
+from typing import Annotated, Any, List, Optional, Protocol, TypeVar
 
-from pydantic import BaseModel, ConstrainedInt
+from pydantic import BaseModel, Field
 
 Item = TypeVar("Item")
 OtherItem = TypeVar("OtherItem", bound=BaseModel)
 
 
-class QuerySize(ConstrainedInt):
-    le = 100
-    gt = 0
+QuerySize = Annotated[int, Field(gt=0, le=100)]
 
 
 class PaginatedMethodProtocol(Protocol[Item]):

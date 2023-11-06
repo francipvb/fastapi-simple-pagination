@@ -3,14 +3,15 @@ import math
 import typing
 
 import fastapi
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic import AnyHttpUrl, BaseModel, parse_obj_as
 
-from .common import Item
 from .schemas import Page
+
+Item = typing.TypeVar("Item", bound=BaseModel)
 
 
 @dataclasses.dataclass(frozen=True)
-class PaginationRequestParams(typing.Generic[Item]):
+class PaginationRequestParams:
     request: fastapi.Request
     page: int = fastapi.Query(1, description="The page number to query.")
     size: int = fastapi.Query(10, description="The page size.")
