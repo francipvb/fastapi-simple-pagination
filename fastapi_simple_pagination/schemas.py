@@ -3,7 +3,6 @@ from __future__ import annotations
 from asyncio import Task, create_task, ensure_future
 from typing import Any, Awaitable, Callable, Generic, List, Optional, Type, TypeVar
 
-import pydantic
 from pydantic import (
     AnyHttpUrl,
     BaseModel,
@@ -12,18 +11,16 @@ from pydantic import (
     PositiveInt,
     parse_obj_as,
 )
+from pydantic.generics import GenericModel
 
-if pydantic.__version__.startswith("1.10"):
-    from pydantic.generics import GenericModel
-else:
-    GenericModel = BaseModel  # type: ignore
+_Base = GenericModel
 
 
 _T = TypeVar("_T", bound=BaseModel)
 _TM = TypeVar("_TM", bound=BaseModel)
 
 
-class Page(GenericModel, Generic[_T]):
+class Page(_Base, Generic[_T]):
     count: int = Field(
         default=...,
         description="The total number of items in the database.",
@@ -91,7 +88,7 @@ class Page(GenericModel, Generic[_T]):
         return parse_obj_as(page_model, self)
 
 
-class CursorPage(GenericModel, Generic[_T]):
+class CursorPage(_Base, Generic[_T]):
     """An offset and size paginated list."""
 
     offset: NonNegativeInt = Field(
