@@ -4,56 +4,42 @@ from asyncio import Task, create_task, ensure_future
 from typing import Any, Awaitable, Callable, Generic, List, Optional, Type, TypeVar
 
 import pydantic
-from pydantic import (
-    AnyHttpUrl,
-    BaseModel,
-    Field,
-    NonNegativeInt,
-    PositiveInt,
-    parse_obj_as,
-)
 
-if pydantic.__version__.startswith("1.10"):
-    from pydantic.generics import GenericModel
-else:
-    GenericModel = BaseModel  # type: ignore
+_T = TypeVar("_T", bound=pydantic.BaseModel)
+_TM = TypeVar("_TM", bound=pydantic.BaseModel)
 
 
-_T = TypeVar("_T", bound=BaseModel)
-_TM = TypeVar("_TM", bound=BaseModel)
-
-
-class Page(GenericModel, Generic[_T]):
-    count: int = Field(
+class Page(pydantic.BaseModel, Generic[_T]):
+    count: int = pydantic.Field(
         default=...,
         description="The total number of items in the database.",
     )
-    previous: Optional[AnyHttpUrl] = Field(
+    previous: Optional[pydantic.AnyHttpUrl] = pydantic.Field(
         default=None,
         description="The URL to the previous page.",
     )
-    next: Optional[AnyHttpUrl] = Field(
+    next: Optional[pydantic.AnyHttpUrl] = pydantic.Field(
         default=None,
         description="The URL to the next page.",
     )
-    first: AnyHttpUrl = Field(
+    first: pydantic.AnyHttpUrl = pydantic.Field(
         default=...,
         description="The URL to the first page.",
     )
-    last: AnyHttpUrl = Field(
+    last: pydantic.AnyHttpUrl = pydantic.Field(
         default=...,
         description="The URL to the last page.",
     )
-    current: AnyHttpUrl = Field(
+    current: pydantic.AnyHttpUrl = pydantic.Field(
         default=...,
         description="The URL to refresh the current page.",
     )
 
-    page: int = Field(
+    page: int = pydantic.Field(
         default=...,
         description="The current page number.",
     )
-    items: List[_T] = Field(
+    items: List[_T] = pydantic.Field(
         default=...,
         description="The item list on this page.",
     )
@@ -87,32 +73,32 @@ class Page(GenericModel, Generic[_T]):
         ]
         return self._build_new_page([await task for task in item_tasks], type_)
 
-    def validate_page(self, page_model: Type[_Page]) -> _Page:
-        return parse_obj_as(page_model, self)
+    def validate_page(self, page_model: type[_Page]) -> _Page:
+        return page_model.model_validate(self.model_dump())
 
 
-class CursorPage(GenericModel, Generic[_T]):
+class CursorPage(pydantic.BaseModel, Generic[_T]):
     """An offset and size paginated list."""
 
-    offset: NonNegativeInt = Field(
+    offset: pydantic.NonNegativeInt = pydantic.Field(
         description="The offset where to start retrieving.",
     )
-    size: PositiveInt = Field(
+    size: pydantic.PositiveInt = pydantic.Field(
         description="The size of the page.",
     )
-    count: NonNegativeInt = Field(
+    count: pydantic.NonNegativeInt = pydantic.Field(
         description="How many items are saved in the store.",
     )
-    current: AnyHttpUrl = Field(
+    current: pydantic.AnyHttpUrl = pydantic.Field(
         description="The URL of the current page.",
     )
-    next_url: Optional[AnyHttpUrl] = Field(
+    next_url: Optional[pydantic.AnyHttpUrl] = pydantic.Field(
         description="The next page URL.",
     )
-    previous_url: Optional[AnyHttpUrl] = Field(
+    previous_url: Optional[pydantic.AnyHttpUrl] = pydantic.Field(
         description="The previous page URL.",
     )
-    items: List[_T] = Field(description="The items of the page.")
+    items: List[_T] = pydantic.Field(description="The items of the page.")
 
     def map(self, mapper: Callable[[_T], _TM]) -> CursorPage[_TM]:
         items = [mapper(item) for item in self.items]
@@ -135,7 +121,7 @@ class CursorPage(GenericModel, Generic[_T]):
         return self._build_new_page([await task for task in item_tasks])
 
     def validate_page(self, page_model: Type[_CursorPage]) -> _CursorPage:
-        return parse_obj_as(page_model, self)
+        return page_model.model_validate(self.model_dump())
 
 
 _CursorPage = TypeVar("_CursorPage", bound=CursorPage[Any])
