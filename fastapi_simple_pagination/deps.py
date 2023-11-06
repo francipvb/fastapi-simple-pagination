@@ -3,7 +3,9 @@ import math
 import typing
 
 import fastapi
-from pydantic import AnyHttpUrl, BaseModel, parse_obj_as
+from pydantic import AnyHttpUrl, BaseModel, PositiveInt, parse_obj_as
+
+from fastapi_simple_pagination.common import QuerySize
 
 from .schemas import Page
 
@@ -13,8 +15,13 @@ Item = typing.TypeVar("Item", bound=BaseModel)
 @dataclasses.dataclass(frozen=True)
 class PaginationRequestParams:
     request: fastapi.Request
-    page: int = fastapi.Query(1, description="The page number to query.")
-    size: int = fastapi.Query(10, description="The page size.")
+    page: typing.Annotated[
+        PositiveInt,
+        fastapi.Query(
+            description="The page number to get.",
+        ),
+    ] = 1
+    size: QuerySize = 10
 
     def get_next(self, total_count: int):
         if self.page * self.size < total_count:

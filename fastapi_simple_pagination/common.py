@@ -1,12 +1,16 @@
 from typing import Annotated, Any, List, Optional, Protocol, TypeVar
 
-from pydantic import BaseModel, Field
+from fastapi import Query
+from pydantic import BaseModel, PositiveInt
 
 Item = TypeVar("Item")
 OtherItem = TypeVar("OtherItem", bound=BaseModel)
 
 
-QuerySize = Annotated[int, Field(gt=0, le=100)]
+QuerySize = Annotated[
+    PositiveInt,
+    Query(description="The size of the page to be retrieve."),
+]
 
 
 class PaginatedMethodProtocol(Protocol[Item]):

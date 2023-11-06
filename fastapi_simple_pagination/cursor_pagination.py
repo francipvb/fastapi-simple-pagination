@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Callable, List
+from typing import Annotated, Any, Callable, List
 
 from fastapi import Query, Request
 from pydantic import AnyHttpUrl, NonNegativeInt, parse_obj_as
@@ -15,14 +15,13 @@ def _identity(item: Any) -> Any:
 @dataclass()
 class CursorPaginationParams:
     request: Request
-    offset: NonNegativeInt = Query(
-        default=0,
-        description="Where to start retrieving.",
-    )
-    size: QuerySize = Query(
-        default=10,
-        description="Size of the page.",
-    )
+    offset: Annotated[
+        NonNegativeInt,
+        Query(
+            description="Where to start retrieving.",
+        ),
+    ] = 0
+    size: QuerySize = 10
 
     async def paginated(
         self,
