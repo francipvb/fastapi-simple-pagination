@@ -18,9 +18,9 @@ _P = ParamSpec("_P")
 class PaginatedMethodProtocol(Protocol[Item, _P]):
     async def __call__(
         self,
-        *args: _P.args,
         offset: Optional[int] = None,
         size: Optional[int] = None,
+        *args: _P.args,
         **kwargs: _P.kwargs,
     ) -> List[Item]:
         ...
