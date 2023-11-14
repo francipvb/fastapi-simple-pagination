@@ -1,15 +1,24 @@
 from dataclasses import dataclass
-from typing import Annotated, Any, Callable, List
+from typing import Annotated, Any, Callable, List, ParamSpec
 
 from fastapi import Query, Request
 from pydantic import AnyHttpUrl, NonNegativeInt, parse_obj_as
 
-from .common import CountItems, Item, OtherItem, PaginatedMethodProtocol, QuerySize
+from .common import (
+    CountItemsProtocol,
+    Item,
+    OtherItem,
+    PaginatedMethodProtocol,
+    QuerySize,
+)
 from .schemas import CursorPage
 
 
 def _identity(item: Any) -> Any:
     return item
+
+
+_P = ParamSpec("_P")
 
 
 @dataclass()
@@ -25,13 +34,16 @@ class CursorPaginationParams:
 
     async def paginated(
         self,
-        items_getter: PaginatedMethodProtocol[Item],
-        item_counter: CountItems,
+        items_getter: PaginatedMethodProtocol[Item, _P],
+        item_counter: CountItemsProtocol[_P],
         item_mapper: Callable[[Item], OtherItem] = _identity,
-        **kwargs: Any,
+        *args: _P.args,
+        **kwargs: _P.kwargs,
     ) -> CursorPage[OtherItem]:
-        item_list = await items_getter(size=self.size, offset=self.offset, **kwargs)
-        item_count = await item_counter(**kwargs)
+        item_list = await items_getter(
+            size=self.size, offset=self.offset, *args, **kwargs
+        )
+        item_count = await item_counter(*args, **kwargs)
         has_next = self.offset + self.size < item_count
         items = [item_mapper(i) for i in item_list]
 
