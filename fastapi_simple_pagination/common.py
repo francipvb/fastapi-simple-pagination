@@ -1,4 +1,4 @@
-from typing import Annotated, Any, List, Optional, Protocol, TypeVar
+from typing import Annotated, List, Optional, ParamSpec, Protocol, TypeVar
 
 from fastapi import Query
 from pydantic import BaseModel, PositiveInt
@@ -12,18 +12,20 @@ QuerySize = Annotated[
     Query(description="The size of the page to be retrieve."),
 ]
 
+_P = ParamSpec("_P")
 
-class PaginatedMethodProtocol(Protocol[Item]):
+
+class PaginatedMethodProtocol(Protocol[Item, _P]):
     async def __call__(
         self,
-        *,
+        *args: _P.args,
         offset: Optional[int] = None,
         size: Optional[int] = None,
-        **kwargs: Any,
+        **kwargs: _P.kwargs,
     ) -> List[Item]:
         ...
 
 
-class CountItems(Protocol):
-    async def __call__(self, **kwargs: Any) -> int:
+class CountItemsProtocol(Protocol[_P]):
+    async def __call__(self, *args: _P.args, **kwargs: _P.kwargs) -> int:
         ...

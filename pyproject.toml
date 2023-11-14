@@ -33,3 +33,6 @@ strict_optional = true
 [tool.isort]
 known_first_party = ['app']
 profile = 'black'
+
+[tool.pyright]
+typeCheckingMode = "strict"
